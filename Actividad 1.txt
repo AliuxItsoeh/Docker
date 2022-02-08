@@ -1,0 +1,52 @@
+*******************************
+**Brayan Aliux Reyes Martinez**
+*******************************
+
+Levantar el CMS de Wordpress con salida en el puerto 8080 con conexión a la base de datos worpress01
+
+creada en el contendor mariadb01.
+
+Paso 1)Descargamos la imagen del wordpress. 
+	docker pull wordpress:4.7.2-apache
+
+Paso 2)Descargamos la imagen de mariadb.
+	docker pull mariadb:10.0.29
+
+Paso 3)Creamos el contenedor asignando el puerto 80
+	docker run --name wordpress01 -d -p 8080:80 wordpress:4.7.2-apache
+
+Paso 4)Creamos el contenedor de la Base de datos
+	docker run --name mariadb01 -d mariadb:10.0.29
+
+Paso 5) Asignamos los parametros de la base de datos 
+	docker run --name mariadb01 -d -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=wordpress01 -e MYSQL_USER=user -e MYSQL_PASSWORD=userP mariadb:10.0.29
+
+
+//Realizamos la conexión empleando bridge de FrontEnd y de BackEnd.
+
+Paso 1)Creamos una nueva network con el driver "bridge" para FrontEnd
+	docker network create --driver bridge FrontEnd
+
+Paso 2)Creamos ahora una nueva network con el driver "bridge" para BackEnd
+	docker network create --driver bridge BackEnd
+
+Paso 3)Creamos el wordpress y mariadb
+	docker run --name wordpress02 -d -p 80:80 --network=FrontEnd  wordpress:4.7.2-apache 
+	docker run --name mariadb02 -d -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=wordpress02 -e MYSQL_USER=user -e MYSQL_PASSWORD=userP --network=BackEnd  mariadb:10.0.29
+
+Paso 4)Ahora conectamos la red del BackEnd 
+	docker network connect BackEnd wordpress01
+
+***** Creamos dos volumenes uno para wordpress llamado VL_wordpress01 compartido en el Host con la dirección /var/www/html y otro para mariadb01 llamado VL_mariadb01 compartida en el host con la dirección /var/lib/mysql.*****
+
+Paso 1)Creamos la network BackEnd
+	docker network create --driver bridge BackEnd
+
+Paso 2)Creamos la network FrontEnd
+	docker network create --driver bridge FrontEnd
+
+Paso 3)Ahora creamos el contenedor de wordpress asignando el puerto 80, determinando su destionno dentro del contenedor (dst) 
+	docker run --name wordpress01 -d -p 80:80 --mount src=VL_wordpress01,dst=/var/www/html --network=FrontEnd wordpress:4.7.2-apache
+
+Paso 4)Finalmente creamos el contenedor de mariadb01, determinando su destino dentro del contenedor (dst)
+	docker run --name mariadb01 -d -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=wordpress01 -e MYSQL_USER=user -e MYSQL_PASSWORD=userP --network=BackEnd --mount src=VL_mariadb01,dst=/var/lib/mysql mariadb:10.0.29
