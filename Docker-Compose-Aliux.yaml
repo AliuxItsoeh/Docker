@@ -1,0 +1,37 @@
+version: "3.8" #Identificamos la version
+services: #Definir los servicios que vamos a ejecutar
+  nodered: #Definimos a Node red
+      container_name: Nodered #asignamos un nombre al contenedor
+      image: nodered/node-red:latest #Cargamos su imagen
+      restart: always #Se coloca para reiniciar automáticamente por si se encuentra alguna falla
+      ports: #Asignamos el puerto
+      - 1880:1880 #En este caso asignamos estos puertos
+      depends_on: # Permite que el inicio de ejecución de un servicio dependa de otros.
+      - influxdb #Node-red depende de influxDB
+
+                                      #Iniciamos Influxdb
+
+  influxdb: #Fuente de datos para node-red y grafana 
+      container_name: InfluxDB #Definimos el nombre del contenedor
+      image: influxdb #Cargar la imagen
+      restart: always #Se coloca para reiniciar automáticamente por si se encuentra alguna falla
+      environment: # Permite poner una lista de variables de entorno que esten disponibles en el servicio
+        - INFLUXDB_DB=grafana #Creara una base de datos cuando creemos el contenedor
+        - INFLUXDB_USER=grafana #Creara un usuario para la BD 
+        - INFLUXDB_USER_PASSWORD=password # Crea una contraseña para la BD
+        - INFLUXDB_ADMIN_ENABLE=true #Habilita una cuenta de administrador para influx
+        - INFLUXDB_ADMIN_USER=admin #Se crea un usuario nuevo
+        - INFLUXDB_ADMIN_PASSWORD=admin #Se establece la contraseña
+
+                                      #Iniciamos Grafana
+
+  grafana: # Creamos el segundo servicio
+      container_name: Grafana #Definimos el nombre del contenedor
+      image: grafana/grafana #Cargamos su imagen
+      restart: always #Se coloca para reiniciar automáticamente por si se encuentra alguna falla
+      ports: #Definir el valor del puerto de grafana
+      - 3000:3000 #Asignamos los puertos
+      depends_on: # Permite que el inicio de ejecución de un servicio dependa de otros.
+      - influxdb #Grafama depende de influxDB
+      
+  
